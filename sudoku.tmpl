@@ -1,0 +1,167 @@
+-------------------------------------------------------------------------------
+
+            +-------------------------+
+            | CS 450                  |
+            | PROJECT: SUDOKU CHECKER |
+            | DESIGN DOCUMENT         |
+            +-------------------------+
+
+---- GROUP ----
+
+>> Fill in the names and email addresses of your group members.
+
+Aidan Roth <rotha@sonoma.edu>
+Antone Silveria <silveant@sonoma.edu>
+Preston Zimmerman <zimmermp@sonoma.edu>
+Devan Royal <royal@sonoma.edu>
+
+---- PRELIMINARIES ----
+
+>> If you have any preliminary comments on your submission, notes for the
+>> TAs, or extra credit, please give them here.
+
+>> Please cite any offline or online sources you consulted while
+>> preparing your submission, other than the Pintos documentation, course
+>> text, lecture notes, and course staff.
+
+               THREADED SUDOKU CHECKER
+               =======================
+
+---- DATA STRUCTURES ----
+
+>> A1: Copy here the declaration of each new `struct',
+>> `struct' member, global or static variable, `typedef', or
+>> enumeration.  Identify the purpose of each in 25 words or less.
+
+typedef struct Params {int grid[9], int row, int col, char str[99], int error} sudokuData;
+	This is the struct that will hold the data of the sudoku board input.
+
+
+---- ALGORITHMS ----
+
+>> A2: Briefly describe how you communicated to each worker thread
+>> the work it should perform, as a void *
+
+In pthread_create, we passed the function validRow as its start routine and passed that function
+an array in the form of a void *. That way, it would check whether the void * input was, in fact,
+a valid sudoku row.
+
+>> A3: Briefly describe the function(s) run by each worker. Explain
+>> if you could reduce the number of functions, by generalizing each
+>> problem in some way.
+
+The function validRow first creates an array of length 9 filled with zeros and iterates through the values of the
+input array (which represents a row of the sudoku board). for each digit 1 through 9, it adds the value 1
+to that index. It then iterates through the created array, and if it finds a zero at any index, that means
+a value is missing and it reports an error.
+
+---- SYNCHRONIZATION ----
+
+>> A4: Explain how the main thread knows when all the worker
+>> threads have completed their work.
+
+There is a for loop set up after the worker threads are created and ran that call pthread_join on all 27 threads.
+
+
+>> A5: Explain how the main thread knows when a particular worker
+>> thread has reported a property is missing.
+
+In validRow, an error is thrown if a property is missing. After the pthread_join for loop is completed, another
+loop goes through the worker thread results and checks if they reported an error. If one does, it prints that
+loop's number and says it doesn't have the required values.
+
+---- RATIONALE ----
+
+>> A6: Overzealous use of synchronization can cause code to become
+>> too serialized, and unable to take advantage of parallelism.
+>> Explain why you chose your design, arguing how it is highly
+>> parallel, while the access to each resource is safe and deadlock free.
+
+Our design is highly parallel in that it creates a thread for each row in the sudoku table. By taking this approach,
+it allows the program to check each row at the same time, without having to wait for each one to complete. It also
+allows for errors to be reported before the entire table is checked, which saves time and resources from continuing to
+be taken up after the sudoku solution has been deemed invalid.
+
+>> A7: Explain how you ensured that your program has no resource leaks.
+>> List all the free-able resources and, for each, explain how you
+>> free them at the earliest possible time.
+
+The only free-able resources we are aware of are memory and processing power. We keep memory free and avoid leaks
+by not using the malloc function, eliminating the need to de-allocate any pointers. We make sure processing power
+is free at the earliest time by using threads and joining them when they finish their job.
+
+
+               FORKING SUDOKU CHECKER
+               =======================
+
+---- DATA STRUCTURES ----
+
+>> B1: Copy here the declaration of each new `struct',
+>> `struct' member, global or static variable, `typedef', or
+>> enumeration.  Identify the purpose of each in 25 words or less.
+
+No new data structures were needed to implement forking.
+
+---- ALGORITHMS ----
+
+>> B2: Briefly describe if the method of communicating to each child
+>> thread or the function(s) run by each child was different than in
+>> your threaded implementation.
+
+The function for actually checking whether or not rows are valid is virtually identical to the threaded
+implementation. When fork is called and the child is given the function, it is passed an array as a
+void * just like in the threaded implementation.
+
+---- SYNCHRONIZATION ----
+
+>> B3: Explain how the parent process knows when all the worker
+>> threads have completed their work.
+
+The parent process waits for its children to run their function and return with a certain value. When they
+exit, it checks their exit status code, which tells it whether or not the input was a valid sudoku row.
+
+>> B4: Explain how the parent process knows when a particular worker
+>> thread has reported a property is missing.
+
+If a child process exits with a status code of 1, that tells the parent process that the input was not a valid
+sudoku row.
+
+---- RATIONALE ----
+
+>> B5: Explain how you ensured that your program has no resource leaks.
+>> List all the free-able resources and, for each, explain how you
+>> free them at the earliest possible time.
+
+Like before, free-able resources are memory and processing power. We did not use malloc or reserve memory for pointers,
+so we didn't have to worry about memory leaks. When the child processes exit, they are destroyed and free any memory
+they are taking up.
+
+>> B6: Overzealous use of synchronization can cause code to become
+>> too serialized, and unable to take advantage of parallelism.
+>> Explain why you chose your design, arguing how it is highly
+>> parallel, while the access to each resource is safe and deadlock free.
+
+We set up a lot of code in main to build the sudoku table. This approach required many lines of code, but ensures that
+the threads stay safe and avoid deadlocks.
+
+
+               SURVEY QUESTIONS
+               ================
+
+Answering these questions is optional, but it will help us improve the
+course in future quarters.  Feel free to tell us anything you
+want--these questions are just to spur your thoughts.  You may also
+choose to respond anonymously in the course evaluations at the end of
+the quarter.
+
+>> In your opinion, was this assignment, or any one of the problems
+>> in it, too easy or too hard?  Did it take too long or too little time?
+
+>> Did you find that working on a particular part of the assignment gave
+>> you greater insight into some aspect of OS design?
+
+>> Is there some particular fact or hint we should give students in
+>> future quarters to help them solve the problems?  Conversely, did you
+>> find any of our guidance to be misleading?
+
+>> Any other comments?
